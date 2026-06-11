@@ -751,6 +751,7 @@ function submitBooking() {
   };
 
   saveBooking(booking);
+  fetch("https://sctapi.ftqq.com/SCT362962T47WjPuSgp5p7sStndLTZ2TdI.send",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`title=${encodeURIComponent("🎿 新预约："+booking.course)}&desp=${encodeURIComponent("课程："+booking.course+"\n日期："+formatDate(booking.date)+"\n时段："+booking.time+"\n学员："+booking.name+"\n手机："+booking.phone+"\n费用：¥"+booking.price+(booking.note?"\n备注："+booking.note:""))}`}).catch(e=>console.log(e));
   showToast('预约成功！教练会尽快联系您');
 
   // Reset
