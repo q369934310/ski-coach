@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>雪季教练 · 滑雪私教预约</title>
+<style>
+  :root {
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1f2937;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --radius: 10px;
+    --tab-height: 56px;
+    --safe-bottom: env(safe-area-inset-bottom, 12px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100dvh;
+    background: var(--bg);
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Page containers */
+  .page {
+    display: none;
+    padding: 0 0 calc(var(--tab-height) + var(--safe-bottom) + 20px);
+    animation: fadeIn 0.2s ease;
+  }
+  .page.active { display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Top nav bar */
+  .nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--card);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-title { font-size: 17px; font-weight: 600; }
+  .nav-action { font-size: 14px; color: var(--blue); background: none; border: none; cursor: pointer; }
+
+  /* Tab bar */
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    height: calc(var(--tab-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+  }
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    color: #9ca3af;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 12px;
+    transition: color 0.15s;
+  }
+  .tab-item.active { color: var(--blue); }
+  .tab-item svg { width: 24px; height: 24px; }
+
+  /* Home page */
+  .hero {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 40%, #2c5364 100%);
+    color: #fff;
+    padding: 32px 20px 28px;
+    border-radius: 0 0 20px 20px;
+    text-align: center;
+  }
+  .hero-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+  .hero h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .hero .tagline { font-size: 13px; opacity: 0.8; margin-bottom: 14px; }
+  .hero-tags {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .hero-tags span {
+    background: rgba(255,255,255,0.18);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 16px;
+    margin-top: -12px;
+    position: relative;
+    z-index: 2;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .num { font-size: 22px; font-weight: 700; color: var(--blue); }
+  .stat-card .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+  .section { padding: 20px 16px; }
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .course-cards { display: flex; flex-direction: column; gap: 10px; }
+  .course-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .course-card:active { transform: scale(0.98); }
+  .course-info h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .course-info .meta { font-size: 12px; color: var(--text-secondary); }
+  .course-price { text-align: right; }
+  .course-price .price { font-size: 20px; font-weight: 700; color: #e74c3c; }
+  .course-price .unit { font-size: 11px; color: var(--text-secondary); }
+
+  .reviews { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
+  .review-card {
+    min-width: 260px;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+    scroll-snap-align: start;
+  }
+  .review-card .stars { color: #f59e0b; font-size: 13px; margin-bottom: 6px; }
+  .review-card .text { font-size: 13px; line-height: 1.5; color: var(--text); }
+  .review-card .author { font-size: 11px; color: var(--text-secondary); margin-top: 8px; }
+
+  /* Courses page */
+  .course-detail {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 10px;
+  }
+  .course-detail .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .course-detail h3 { font-size: 16px; font-weight: 600; }
+  .course-detail .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e8f0fe;
+    color: var(--blue);
+  }
+  .course-detail .desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px; }
+  .course-detail .footer { display: flex; justify-content: space-between; align-items: center; }
+  .course-detail .footer .price { font-size: 20px; font-weight: 700; color: #e74c3c; }
+  .btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-outline { background: none; border: 1px solid var(--blue); color: var(--blue); }
+  .btn-block { display: block; width: 100%; padding: 13px; border-radius: var(--radius); font-size: 15px; }
+
+  /* Booking page */
+  .booking-steps { padding: 16px; }
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .step-dot.active { background: var(--blue); color: #fff; }
+  .step-dot.done { background: #34c759; color: #fff; }
+  .step-line { flex: 1; height: 2px; background: var(--border); }
+  .step-line.done { background: #34c759; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 13px; font-weight: 500; margin-bottom: 6px; display: block; color: var(--text); }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    background: var(--card);
+    color: var(--text);
+    -webkit-appearance: none;
+  }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--blue); }
+
+  .time-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .time-slot {
+    padding: 11px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    text-align: center;
+    background: var(--card);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .time-slot.selected { border-color: var(--blue); background: #e8f0fe; color: var(--blue); font-weight: 500; }
+  .time-slot:active { transform: scale(0.96); }
+
+  .booking-summary {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-top: 12px;
+  }
+  .booking-summary .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  .booking-summary .row.total { font-weight: 600; font-size: 15px; border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px; }
+
+  /* Profile page */
+  .booking-list { display: flex; flex-direction: column; gap: 10px; }
+  .booking-item {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .booking-item .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .booking-item .status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .status-confirmed { background: #e8f5e9; color: #2e7d32; }
+  .status-pending { background: #fff3e0; color: #e65100; }
+  .booking-item .info { font-size: 13px; line-height: 1.8; color: var(--text-secondary); }
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 13px;
+    z-index: 999;
+    animation: slideDown 0.3s ease;
+    pointer-events: none;
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-sheet {
+    width: 100%;
+    max-width: 430px;
+    background: var(--card);
+    border-radius: 16px 16px 0 0;
+    padding: 20px 16px calc(20px + var(--safe-bottom));
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-sheet h3 { font-size: 16px; margin-bottom: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ HOME PAGE ============ -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hero-avatar">⛷️</div>
+      <h1>希彬教练</h1>
+      <p class="tagline">CSIA认证滑雪教练 · 专注成人&青少年教学</p>
+      <div class="hero-tags">
+        <span>🏔️ 禾木常驻</span>
+        <span>🎿 单双兼修</span>
+        <span>📅 6年教龄</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="num">500+</div><div class="label">累计学员</div></div>
+      <div class="stat-card"><div class="num">3000+</div><div class="label">课时交付</div></div>
+      <div class="stat-card"><div class="num">98%</div><div class="label">好评率</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔥 热门课程</div>
+      <div class="course-cards" id="home-courses"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">💬 学员评价</div>
+      <div class="reviews" id="home-reviews"></div>
+    </div>
+  </div>
+
+  <!-- ============ COURSES PAGE ============ -->
+  <div class="page" id="page-courses">
+    <div class="nav-bar">
+      <span class="nav-title">全部课程</span>
+    </div>
+    <div style="padding: 16px;" id="courses-list"></div>
+  </div>
+
+  <!-- ============ BOOKING PAGE ============ -->
+  <div class="page" id="page-booking">
+    <div class="nav-bar">
+      <span class="nav-title">预约课程</span>
+    </div>
+    <div class="booking-steps" id="booking-content"></div>
+  </div>
+
+  <!-- ============ PROFILE PAGE ============ -->
+  <div class="page" id="page-profile">
+    <div class="nav-bar">
+      <span class="nav-title">我的</span>
+      <button class="nav-action" onclick="clearAllBookings()">清空记录</button>
+    </div>
+    <div style="padding: 16px;" id="profile-content"></div>
+  </div>
+
+  <!-- ============ TAB BAR ============ -->
+  <div class="tab-bar">
+    <button class="tab-item active" data-page="home" onclick="switchPage('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      首页
+    </button>
+    <button class="tab-item" data-page="courses" onclick="switchPage('courses')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      课程
+    </button>
+    <button class="tab-item" data-page="booking" onclick="switchPage('booking')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      预约
+    </button>
+    <button class="tab-item" data-page="profile" onclick="switchPage('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      我的
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="display:none;"></div>
+
+<script>
+// ============ DATA ============
+const COURSES = [
+  {
+    id: 'trial',
+    name: '零基础体验课',
+    duration: '2小时',
+    desc: '面向完全零基础的学员，包含装备认识、基础站姿、平地滑行、犁式刹车。让你在两小时内爱上滑雪。',
+    price: 1200,
+    badge: '新手推荐'
+  },
+  {
+    id: 'beginner',
+    name: '初级进阶课',
+    duration: '3小时',
+    desc: '适合有1-3次滑雪经验的学员。巩固犁式转弯、学习半犁式、平行式入门，为中级道做准备。',
+    price: 1800,
+    badge: '热门'
+  },
+  {
+    id: 'intermediate',
+    name: '中级提升课',
+    duration: '3小时',
+    desc: '平行式巩固、点杖技巧、不同雪况适应、小弯入门。适合蓝道流畅滑行的学员。',
+    price: 2400,
+    badge: '进阶'
+  },
+  {
+    id: 'advanced',
+    name: '高级私教课',
+    duration: '全天（6小时）',
+    desc: '卡宾、蘑菇、野雪、竞技入门等方向定制。一对一个性化教学，包含视频分析。',
+    price: 3600,
+    badge: '定制'
+  },
+  {
+    id: 'kids',
+    name: '青少年滑雪课',
+    duration: '2小时',
+    desc: '面向6-16岁青少年，寓教于乐。注重安全意识和基础技术，让孩子快乐学滑雪。',
+    price: 1200,
+    badge: '亲子'
+  }
+];
+
+const REVIEWS = [
+  { stars: 5, text: '希彬教练非常耐心，我一节课就从完全不敢滑到能自己犁式下初级道了！讲解通俗易懂，强烈推荐。', author: '王女士 · 体验课' },
+  { stars: 5, text: '上了三节课，平行式基本掌握了。教练的分解教学法特别好，每个动作都拆得很细。', author: '张先生 · 初级课' },
+  { stars: 5, text: '带儿子来学的，小朋友特别喜欢希彬教练。教学很有方法，孩子进步特别快，已经能上中级道了。', author: '刘先生 · 青少年课' },
+  { stars: 5, text: '卡宾进阶课收获巨大！教练帮我指出了好几个自己没意识到的问题，一趟下来速度和稳定性都提升了。', author: '赵先生 · 高级课' }
+];
+
+const TIME_SLOTS = ['09:00-11:00', '10:00-12:00', '11:00-13:00', '13:00-15:00', '14:00-16:00', '15:00-17:00'];
+
+// ============ STATE ============
+let currentPage = 'home';
+let bookingStep = 1;
+let bookingData = { course: null, date: '', time: '', name: '', phone: '', note: '' };
+
+// ============ HELPERS ============
+function $(id) { return document.getElementById(id); }
+
+function loadBookings() {
+  try { return JSON.parse(localStorage.getItem('ski_bookings') || '[]'); }
+  catch(e) { return []; }
+}
+
+function saveBooking(b) {
+  const bookings = loadBookings();
+  bookings.unshift(b);
+  localStorage.setItem('ski_bookings', JSON.stringify(bookings));
+}
+
+function clearAllBookings() {
+  if (confirm('确定清空所有预约记录？')) {
+    localStorage.removeItem('ski_bookings');
+    renderProfile();
+    showToast('已清空');
+  }
+}
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+function formatDate(d) {
+  const date = new Date(d);
+  return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日`;
+}
+
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getNextWeek() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ============ NAVIGATION ============
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $(`page-${page}`).classList.add('active');
+
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab-item[data-page="${page}"]`).classList.add('active');
+
+  if (page === 'booking') renderBooking();
+  if (page === 'profile') renderProfile();
+}
+
+// ============ RENDER HOME ============
+function renderHomeCourses() {
+  const container = $('home-courses');
+  container.innerHTML = COURSES.slice(0, 3).map(c => `
+    <div class="course-card" onclick="quickBook('${c.id}')">
+      <div class="course-info">
+        <h3>${c.name}</h3>
+        <div class="meta">${c.duration} · ${c.badge}</div>
+      </div>
+      <div class="course-price">
+        <div class="price">¥${c.price}</div>
+        <div class="unit">/节</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderHomeReviews() {
+  $('home-reviews').innerHTML = REVIEWS.map(r => `
+    <div class="review-card">
+      <div class="stars">${'★'.repeat(r.stars)}</div>
+      <div class="text">${r.text}</div>
+      <div class="author">${r.author}</div>
+    </div>
+  `).join('');
+}
+
+// ============ RENDER COURSES ============
+function renderCourses() {
+  $('courses-list').innerHTML = COURSES.map(c => `
+    <div class="course-detail">
+      <div class="header">
+        <h3>${c.name}</h3>
+        <span class="badge">${c.badge}</span>
+      </div>
+      <div class="desc">${c.desc}</div>
+      <div class="footer">
+        <span class="price">¥${c.price}<span style="font-size:12px;color:#6b7280;font-weight:400;"> / 节</span></span>
+        <button class="btn btn-primary" onclick="quickBook('${c.id}')">立即预约</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ BOOKING ============
+function quickBook(courseId) {
+  const course = COURSES.find(c => c.id === courseId);
+  if (!course) return;
+  bookingData = { course, date: '', time: '', name: '', phone: '', note: '' };
+  bookingStep = 1;
+  renderBooking();
+  switchPage('booking');
+}
+
+function renderBooking() {
+  const container = $('booking-content');
+  if (!bookingData.course) {
+    // No course selected yet — show course picker
+    container.innerHTML = `
+      <div class="form-group">
+        <label class="form-label">选择课程</label>
+        <div class="course-cards">
+          ${COURSES.map(c => `
+            <div class="course-card" onclick="selectCourseForBooking('${c.id}')">
+              <div class="course-info">
+                <h3>${c.name}</h3>
+                <div class="meta">${c.duration}</div>
+              </div>
+              <div class="course-price">
+                <div class="price">¥${c.price}</div>
+                <div class="unit">/节</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="step-indicator">
+      <div class="step-dot ${bookingStep >= 1 ? 'active' : ''} ${bookingStep > 1 ? 'done' : ''}">1</div>
+      <div class="step-line ${bookingStep > 1 ? 'done' : ''}"></div>
+      <div class="step-dot ${bookingStep >= 2 ? 'active' : ''} ${bookingStep > 2 ? 'done' : ''}">2</div>
+      <div class="step-line ${bookingStep > 2 ? 'done' : ''}"></div>
+      <div class="step-dot ${bookingStep >= 3 ? 'active' : ''}">3</div>
+    </div>
+    ${renderBookingStep()}
+  `;
+}
+
+function selectCourseForBooking(courseId) {
+  const course = COURSES.find(c => c.id === courseId);
+  if (!course) return;
+  bookingData = { course, date: '', time: '', name: '', phone: '', note: '' };
+  bookingStep = 1;
+  renderBooking();
+}
+
+function renderBookingStep() {
+  if (bookingStep === 1) {
+    return `
+      <div class="form-group">
+        <label class="form-label">已选课程</label>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:14px;">
+          <strong>${bookingData.course.name}</strong>
+          <span style="color:var(--text-secondary);margin-left:8px;">${bookingData.course.duration} · ¥${bookingData.course.price}</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">选择日期</label>
+        <input type="date" class="form-input" id="booking-date"
+          min="${getToday()}" max="${getNextWeek()}"
+          value="${bookingData.date}"
+          onchange="bookingData.date = this.value">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="goToStep(2)">下一步 →</button>
+    `;
+  }
+
+  if (bookingStep === 2) {
+    return `
+      <div class="form-group">
+        <label class="form-label">选择时段</label>
+        <div class="time-slots">
+          ${TIME_SLOTS.map(t => `
+            <div class="time-slot${bookingData.time === t ? ' selected' : ''}" onclick="selectTime('${t}')">${t}</div>
+          `).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline btn-block" onclick="goToStep(1)">← 上一步</button>
+        <button class="btn btn-primary btn-block" onclick="goToStep(3)">下一步 →</button>
+      </div>
+    `;
+  }
+
+  if (bookingStep === 3) {
+    return `
+      <div class="booking-summary">
+        <div class="row"><span>课程</span><span>${bookingData.course.name}</span></div>
+        <div class="row"><span>日期</span><span>${bookingData.date ? formatDate(bookingData.date) : '未选择'}</span></div>
+        <div class="row"><span>时段</span><span>${bookingData.time || '未选择'}</span></div>
+        <div class="row total"><span>费用</span><span>¥${bookingData.course.price}</span></div>
+      </div>
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">姓名</label>
+        <input type="text" class="form-input" placeholder="请输入您的姓名" value="${bookingData.name}" oninput="bookingData.name = this.value">
+      </div>
+      <div class="form-group">
+        <label class="form-label">手机号</label>
+        <input type="tel" class="form-input" placeholder="请输入手机号" value="${bookingData.phone}" oninput="bookingData.phone = this.value">
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注（选填）</label>
+        <textarea class="form-textarea" placeholder="如有特殊需求请注明" oninput="bookingData.note = this.value">${bookingData.note}</textarea>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline btn-block" onclick="goToStep(2)">← 上一步</button>
+        <button class="btn btn-primary btn-block" onclick="submitBooking()">确认预约</button>
+      </div>
+    `;
+  }
+}
+
+function selectTime(t) {
+  bookingData.time = t;
+  renderBooking();
+}
+
+function goToStep(step) {
+  if (step === 2 && !bookingData.date) { showToast('请先选择日期'); return; }
+  if (step === 3 && !bookingData.time) { showToast('请先选择时段'); return; }
+  bookingStep = step;
+  renderBooking();
+}
+
+function submitBooking() {
+  if (!bookingData.name.trim()) { showToast('请输入姓名'); return; }
+  if (!bookingData.phone.trim()) { showToast('请输入手机号'); return; }
+  if (!/^1[3-9]\d{9}$/.test(bookingData.phone.trim())) { showToast('请输入正确的手机号'); return; }
+
+  const booking = {
+    id: Date.now(),
+    course: bookingData.course.name,
+    price: bookingData.course.price,
+    date: bookingData.date,
+    time: bookingData.time,
+    name: bookingData.name.trim(),
+    phone: bookingData.phone.trim(),
+    note: bookingData.note.trim(),
+    status: 'confirmed',
+    createdAt: new Date().toISOString()
+  };
+
+  saveBooking(booking);
+  showToast('预约成功！教练会尽快联系您');
+
+  // Reset
+  bookingData = { course: null, date: '', time: '', name: '', phone: '', note: '' };
+  bookingStep = 1;
+  renderBooking();
+}
+
+// ============ PROFILE ============
+function renderProfile() {
+  const bookings = loadBookings();
+  const container = $('profile-content');
+
+  if (bookings.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <p>暂无预约记录</p>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="switchPage('booking')">去预约课程</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="booking-list">
+      ${bookings.map(b => `
+        <div class="booking-item">
+          <div class="top">
+            <strong style="font-size:15px;">${b.course}</strong>
+            <span class="status status-${b.status}">${b.status === 'confirmed' ? '已确认' : '待确认'}</span>
+          </div>
+          <div class="info">
+            📅 ${formatDate(b.date)} &nbsp; 🕐 ${b.time}<br>
+            👤 ${b.name} &nbsp; 📱 ${b.phone}<br>
+            💰 ¥${b.price}
+            ${b.note ? `<br>📝 ${b.note}` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ============ INIT ============
+renderHomeCourses();
+renderHomeReviews();
+renderCourses();
+renderProfile();
+</script>
+</body>
+</html>
